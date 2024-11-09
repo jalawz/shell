@@ -165,7 +165,6 @@ install_zsh() {
 # Função para baixar e instalar pacotes .deb ou .rpm
 install_custom_package() {
     local pacote_url=$1
-    local DISTRO=$(lsb_release -i | awk '{print tolower($3)}')
 
     if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "zorin" || "$DISTRO" == "linuxmint" ]]; then
         # Para distribuições baseadas em Debian
