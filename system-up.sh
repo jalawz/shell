@@ -34,6 +34,36 @@ else
     exit 1
 fi
 
+flatpak_apps=(
+  io.bassi.Amberol
+  net.agalwood.Motrix
+  com.rafaelmardojai.Blanket
+  com.github.KRTirtho.Spotube
+  com.mattjakeman.ExtensionManager
+)
+
+flatpak_apps_optional=(
+  io.github.getnf.embellish
+  com.rtosta.zapzap
+  com.obsproject.Studio
+  org.duckstation.DuckStation
+  org.ppsspp.PPSSPP
+  com.heroicgameslauncher.hgl
+  net.lutris.Lutris
+  net.pcsx2.PCSX2
+  com.discordapp.Discord
+  org.telegram.desktop
+  com.getpostman.Postman
+  io.dbeaver.DBeaverCommunity
+  com.jetbrains.PyCharm-Community
+  com.jetbrains.IntelliJ-IDEA-Community
+  org.gnome.meld
+  io.httpie.Httpie
+  page.kramo.Sly
+  com.github.jeromerobert.pdfarranger
+  com.zettlr.Zettlr
+)
+
 configure_grub() {
   # Caminho do arquivo de configuração do GRUB
   grub_config="/etc/default/grub"
@@ -298,6 +328,8 @@ customize_gnome() {
     $install_cmd neofetch
     unzip -o "$CUSTOM_FOLDER/neofetch-config.zip" -d $HOME/.config/
 
+    install_flatpaks "${flatpak_apps[@]}"
+
     # Instalação de aplicativos Gnome
     $install_cmd gnome-weather \
     gnome-maps \
@@ -329,40 +361,14 @@ customize_gnome() {
     dconf load / < "$HOME/$settings_conf"
 }
 
-
 install_flatpaks() {
+  local flatpak_apps=("$@")
+
   # Ativação do suporte ao Flatpak e AppImage
   if [ "$DISTRO" == "ubuntu" ]; then
     $install_cmd gnome-software gnome-software-plugin-flatpak flatpak libfuse2 -y
     flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
   fi
-
-  flatpak_apps=(
-    io.bassi.Amberol
-    net.agalwood.Motrix
-    com.rafaelmardojai.Blanket
-    com.github.KRTirtho.Spotube
-    com.mattjakeman.ExtensionManager
-    io.github.getnf.embellish
-    com.rtosta.zapzap
-    com.obsproject.Studio
-    org.duckstation.DuckStation
-    org.ppsspp.PPSSPP
-    com.heroicgameslauncher.hgl
-    net.lutris.Lutris
-    net.pcsx2.PCSX2
-    com.discordapp.Discord
-    org.telegram.desktop
-    com.getpostman.Postman
-    io.dbeaver.DBeaverCommunity
-    com.jetbrains.PyCharm-Community
-    com.jetbrains.IntelliJ-IDEA-Community
-    org.gnome.meld
-    io.httpie.Httpie
-    page.kramo.Sly
-    com.github.jeromerobert.pdfarranger
-    com.zettlr.Zettlr
-  )
 
   for app in "${flatpak_apps[@]}"; do
     echo "Instalando $app:"
@@ -373,6 +379,8 @@ install_flatpaks() {
   sudo flatpak override --filesystem=$HOME/.local/share/icons
 }
 
+# Exemplo de chamada da função com a lista de aplicativos Flatpak
+
 # Função para exibir o menu interativo
 menu() {
   while true; do
@@ -381,7 +389,7 @@ menu() {
     echo "=============================="
     echo "1) Instalar Dependencias Iniciais"
     echo "2) Remover Snaps Ubuntu"
-    echo "3) Instalar Flatpaks"
+    echo "3) Instalar Flatpaks Opcionais"
     echo "4) Instalar ZSH com Oh My ZSH"
     echo "5) Customizar Gnome"
     echo "6) Instalar Dependencias Dev"
@@ -398,7 +406,7 @@ menu() {
         remove_snaps
         ;;
       3)
-        install_flatpaks
+        install_flatpaks "${flatpak_apps_optional[@]}"
         ;;
       4)
         install_zsh
