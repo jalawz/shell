@@ -66,6 +66,24 @@ flatpak_apps_optional=(
   com.zettlr.Zettlr
 )
 
+install_flatpaks() {
+  local flatpak_apps=("$@")
+
+  # Ativação do suporte ao Flatpak e AppImage
+  if [ "$DISTRO" == "ubuntu" ]; then
+    $install_cmd gnome-software gnome-software-plugin-flatpak flatpak libfuse2 -y
+    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+  fi
+
+  for app in "${flatpak_apps[@]}"; do
+    echo "Instalando $app:"
+    flatpak install flathub "$app" -y
+  done
+
+  sudo flatpak override --filesystem=$HOME/.themes
+  sudo flatpak override --filesystem=$HOME/.local/share/icons
+}
+
 configure_grub() {
   # Caminho do arquivo de configuração do GRUB
   grub_config="/etc/default/grub"
@@ -285,37 +303,27 @@ install_dev_dependencies() {
   fi
 }
 
-install_unavailable_packages() {
-    # Adiciona Copr para nautilus-admin
-    sudo dnf copr enable tomaszgasior/mushrooms -y
-    sudo dnf install nautilus-admin -y
-
-    # Instala gnome-shell-extension-manager via Flatpak
-    flatpak install flathub com.mattjakeman.ExtensionManager -y
-}
-
-
 customize_gnome() {
     if [ "$DISTRO" == "ubuntu" ]; then
-        sudo apt update && sudo apt dist-upgrade -y
-        eval "$install_cmd" curl \
-        gdebi \
-        rsync \
-        nautilus-admin \
-        nautilus-extension-gnome-terminal \
-        sassc \
-        gnome-tweaks \
-        gnome-shell-extension-manager
+      sudo apt update && sudo apt dist-upgrade -y
+      eval "$install_cmd" curl \
+      gdebi \
+      rsync \
+      nautilus-admin \
+      nautilus-extension-gnome-terminal \
+      sassc \
+      gnome-tweaks \
+      gnome-shell-extension-manager
     elif [ "$DISTRO" == "fedora" ]; then
-        eval "$update_cmd"
-        eval "$install_cmd" rpm-ostree
-        sudo dnf copr enable tomaszgasior/mushrooms -y
-        sudo dnf copr enable konimex/neofetch fedora-rawhide-x86_64 -y
-        sudo dnf install nautilus-admin -y
-        eval "$install_cmd" curl \
-        rsync \
-        sassc \
-        gnome-tweaks
+      eval "$update_cmd"
+      eval "$install_cmd" rpm-ostree
+      sudo dnf copr enable tomaszgasior/mushrooms -y
+      sudo dnf copr enable konimex/neofetch fedora-rawhide-x86_64 -y
+      sudo dnf install nautilus-admin -y
+      eval "$install_cmd" curl \
+      rsync \
+      sassc \
+      gnome-tweaks
     fi
 
     # Instalação da extensão do Gnome
@@ -385,24 +393,6 @@ customize_gnome() {
     # Aplicação de configurações do Gnome Shell para Fedora
     unzip "$CUSTOM_FOLDER/$zip_file" -d "$HOME/Downloads"
     dconf load / < "$HOME/$settings_conf"
-}
-
-install_flatpaks() {
-  local flatpak_apps=("$@")
-
-  # Ativação do suporte ao Flatpak e AppImage
-  if [ "$DISTRO" == "ubuntu" ]; then
-    $install_cmd gnome-software gnome-software-plugin-flatpak flatpak libfuse2 -y
-    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-  fi
-
-  for app in "${flatpak_apps[@]}"; do
-    echo "Instalando $app:"
-    flatpak install flathub "$app" -y
-  done
-
-  sudo flatpak override --filesystem=$HOME/.themes
-  sudo flatpak override --filesystem=$HOME/.local/share/icons
 }
 
 # Exemplo de chamada da função com a lista de aplicativos Flatpak
