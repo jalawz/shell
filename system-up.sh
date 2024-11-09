@@ -21,6 +21,7 @@ if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "zorin" || "$DISTRO" == "linuxmint" 
     install_cmd="sudo apt install -y"
     chrome_url="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
     vscode_url="https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64"
+    conky_package="conky-all"
 elif [[ "$DISTRO" == "fedora" ]]; then
     CUSTOM_FOLDER="$PWD/resources"
     zip_file="fedora-desktop-settings.zip"
@@ -29,6 +30,7 @@ elif [[ "$DISTRO" == "fedora" ]]; then
     install_cmd="sudo dnf install -y"
     chrome_url="https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm"
     vscode_url="https://code.visualstudio.com/sha/download?build=stable&os=linux-rpm-x64"
+    conky_package="conky"
 else
     echo "Distribuição não suportada para este script."
     exit 1
@@ -283,21 +285,38 @@ install_dev_dependencies() {
   fi
 }
 
+install_unavailable_packages() {
+    # Adiciona Copr para nautilus-admin
+    sudo dnf copr enable tomaszgasior/mushrooms -y
+    sudo dnf install nautilus-admin -y
+
+    # Instala gnome-shell-extension-manager via Flatpak
+    flatpak install flathub com.mattjakeman.ExtensionManager -y
+}
+
+
 customize_gnome() {
     if [ "$DISTRO" == "ubuntu" ]; then
         sudo apt update && sudo apt dist-upgrade -y
+        eval "$install_cmd" curl \
+        gdebi \
+        rsync \
+        nautilus-admin \
+        nautilus-extension-gnome-terminal \
+        sassc \
+        gnome-tweaks \
+        gnome-shell-extension-manager
     elif [ "$DISTRO" == "fedora" ]; then
         eval "$update_cmd"
+        eval "$install_cmd" rpm-ostree
+        sudo dnf copr enable tomaszgasior/mushrooms -y
+        sudo dnf copr enable konimex/neofetch fedora-rawhide-x86_64 -y
+        sudo dnf install nautilus-admin -y
+        eval "$install_cmd" curl \
+        rsync \
+        sassc \
+        gnome-tweaks
     fi
-
-    eval "$install_cmd" curl \
-    rsync \
-    gdebi \
-    nautilus-admin \
-    nautilus-extension-gnome-terminal \
-    sassc \
-    gnome-tweaks \
-    gnome-shell-extension-manager
 
     # Instalação da extensão do Gnome
     unzip -o "$CUSTOM_FOLDER/gnome-extensions.zip" -d $HOME/.local/share/gnome-shell/
@@ -319,7 +338,7 @@ customize_gnome() {
     sudo unzip -o "$CUSTOM_FOLDER/wallpapers.zip" -d /usr/share/backgrounds/
 
     # Instalação do widget Conky
-    $install_cmd conky-all jq curl playerctl -y
+    eval "$install_cmd $conky_package jq curl playerctl -y"
     unzip -o "$CUSTOM_FOLDER/conky-config.zip" -d $HOME/.config/
 
     # Instalação do Cava e NeoFetch
@@ -344,7 +363,7 @@ customize_gnome() {
     gnome-shell-pomodoro
 
     if [[ "$DISTRO" == "ubuntu" ]]; then
-        # Instalação e mudança do tema Plymouth
+        # Instalação e mudança do tema Plymouth para Ubuntu
         sudo apt install plymouth -y
         sudo unzip -o "$CUSTOM_FOLDER/plymouth-theme.zip" -d /usr/share/plymouth/themes
 
@@ -354,7 +373,14 @@ customize_gnome() {
 
         sudo update-alternatives --config default.plymouth # Escolha o número 2
         sudo update-initramfs -u
+    elif [[ "$DISTRO" == "fedora" ]]; then
+        # Instalação e mudança do tema Plymouth para Fedora
+        sudo dnf install plymouth -y
+        sudo dnf install plymouth-plugin-script -y
+        sudo unzip -o "$CUSTOM_FOLDER/plymouth-theme.zip" -d /usr/share/plymouth/themes
+        sudo plymouth-set-default-theme -R hexagon_dots
     fi
+
 
     # Aplicação de configurações do Gnome Shell para Fedora
     unzip "$CUSTOM_FOLDER/$zip_file" -d "$HOME/Downloads"
