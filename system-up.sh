@@ -115,7 +115,7 @@ install_docker() {
   sudo usermod -aG docker "$USER"
 
   if [[ "$DISTRO" == "fedora" ]]; then
-    sudo systemctl start docker
+    sudo systemctl enable docker
   fi
 }
 
