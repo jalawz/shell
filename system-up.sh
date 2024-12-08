@@ -64,6 +64,7 @@ flatpak_apps_optional=(
   page.kramo.Sly
   com.github.jeromerobert.pdfarranger
   com.zettlr.Zettlr
+  com.github.johnfactotum.Foliate
 )
 
 install_flatpaks() {
@@ -263,7 +264,7 @@ install_dependencies() {
     eval $install_cmd python3-pip
 
     # DOCKER
-    echo "CHAMANDO FUNÇÃO DE INSTALAÇÃO DO DOCKER PORRAAAAAA"
+    echo "Installing Docker"
     install_docker
 }
 
@@ -283,24 +284,30 @@ install_dev_dependencies() {
   source /usr/local/bin/virtualenvwrapper.sh
   "
 
-  # Verifica se o arquivo .zshrc existe
-  if [ -f "$HOME/.zshrc" ]; then
-      # Verifica se a linha já está no .zshrc
-      if ! grep -q "export WORKON_HOME=\$HOME/.virtualenvs" "$HOME/.zshrc"; then
-          echo "$commands" >> "$HOME/.zshrc"
-          echo "Comandos adicionados ao final do arquivo ~/.zshrc com sucesso."
-      fi
-  else
-      # Se .zshrc não existir, verifica se o .bashrc existe
-      if [ -f "$HOME/.bashrc" ]; then
-          if ! grep -q "export WORKON_HOME=\$HOME/.virtualenvs" "$HOME/.bashrc"; then
-              echo "$commands" >> "$HOME/.bashrc"
-              echo "Comandos adicionados ao final do arquivo ~/.bashrc com sucesso."
-          fi
-      else
-          echo "Nenhum arquivo de configuração (.zshrc ou .bashrc) foi encontrado!"
-      fi
+  # Defina o arquivo de configuração do shell
+  SHELL_CONFIG=$HOME/.zshrc
+  if [ ! -f "$SHELL_CONFIG" ]; then
+    SHELL_CONFIG=$HOME/.bashrc
   fi
+
+  # Verifica se o arquivo de configuração existe
+  if [ -f "$SHELL_CONFIG" ]; then
+    # Verifica se a linha já está no arquivo
+    if ! grep -q "export WORKON_HOME=\$HOME/.virtualenvs" "$SHELL_CONFIG"; then
+      echo "$commands" >> "$SHELL_CONFIG"
+      echo "Comandos adicionados ao final do arquivo $SHELL_CONFIG com sucesso."
+    fi
+    # Aplica as alterações
+    source "$SHELL_CONFIG"
+    echo "Configurações carregadas com sucesso."
+  else
+    echo "Nenhum arquivo de configuração (.zshrc ou .bashrc) foi encontrado!"
+  fi
+
+  echo "Instalando Node.js"
+  nvm install 22.12.0
+  echo "Instalando Java 21"
+  sdk install java 21.0.5-zulu
 }
 
 customize_gnome() {
@@ -395,6 +402,17 @@ customize_gnome() {
     dconf load / < "$HOME/$settings_conf"
 }
 
+install_all() {
+  install_dependencies
+  install_dev_dependencies
+  install_flatpaks "${flatpak_apps_optional[@]}"
+  eval "$install_cmd tlp tlp-rdw"
+  sudo systemctl enable tlp
+  sudo systemctl start tlp
+  eval "$install_cmd powertop"
+  sudo powertop --auto-tune
+}
+
 # Exemplo de chamada da função com a lista de aplicativos Flatpak
 
 # Função para exibir o menu interativo
@@ -409,7 +427,8 @@ menu() {
     echo "4) Instalar ZSH com Oh My ZSH"
     echo "5) Customizar Gnome"
     echo "6) Instalar Dependencias Dev"
-    echo "7) Reboot"
+    echo "7) Instalar Todas as Dependencias"
+    echo "8) Reboot"
     echo "q) Sair"
     echo "=============================="
     read -p "Escolha uma opção: " option
@@ -434,6 +453,9 @@ menu() {
         install_dev_dependencies
         ;;
       7)
+        install_all
+        ;;
+      8)
         sudo reboot
         ;;
       q|Q)
