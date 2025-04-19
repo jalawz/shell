@@ -75,12 +75,22 @@ install_custom_package() {
         sudo dpkg -i "$download_path"
         sudo apt-get -f install -y
 
+        echo "Instalando extensões adicionais do gnome"
+        sudo apt install gnome-tweaks
+        sudo apt install gnome-extensions-app
+        sudo apt install chrome-gnome-shell
+
     elif [[ "$DISTRO" == "fedora" ]]; then
         # Para distribuições baseadas em Fedora
         local download_path="/tmp/package_latest.rpm"
         echo "Baixando e instalando o pacote (versão .rpm) para $DISTRO..."
         wget -O "$download_path" "$pacote_url"
         sudo dnf install -y "$download_path"
+
+        echo "Instalando extensões adicionais do gnome"
+        sudo dnf install gnome-tweaks
+        sudo dnf install gnome-extensions-app
+        sudo dnf install chrome-gnome-shell
     else
         echo "Distribuição não suportada: $DISTRO"
         return 1
@@ -99,8 +109,13 @@ install_custom_package() {
 install_dependencies() {
 
     eval $update_cmd
+    echo "Instalando Chrome"
     install_custom_package $chrome_url
+    echo "Instalando VS Code"
     install_custom_package $vscode_url
+
+    echo "Instalando Brave Browser"
+    curl -fsS https://dl.brave.com/install.sh | sh
 
     # GIT
     eval $install_cmd git
